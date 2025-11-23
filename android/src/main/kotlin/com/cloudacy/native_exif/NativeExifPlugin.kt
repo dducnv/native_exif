@@ -3,6 +3,7 @@ package com.cloudacy.native_exif
 import androidx.exifinterface.media.ExifInterface
 import androidx.annotation.NonNull
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.plugin.common.PluginRegistry.Registrar
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -19,6 +20,17 @@ class NativeExifPlugin: FlutterPlugin, MethodCallHandler {
   private var classId = 0
 
   private var interfaces = mutableMapOf<Int, ExifInterface>()
+
+  companion object {
+    /** Support legacy embedding registration. */
+    @JvmStatic
+    fun registerWith(registrar: Registrar) {
+      val channel = MethodChannel(registrar.messenger(), "native_exif")
+      val plugin = NativeExifPlugin()
+      plugin.channel = channel
+      channel.setMethodCallHandler(plugin)
+    }
+  }
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, "native_exif")
