@@ -1,9 +1,10 @@
 package com.cloudacy.native_exif
 
-import androidx.exifinterface.media.ExifInterface
 import androidx.annotation.NonNull
+import androidx.exifinterface.media.ExifInterface
+import android.util.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
-import io.flutter.plugin.common.PluginRegistry
+import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -22,13 +23,29 @@ class NativeExifPlugin: FlutterPlugin, MethodCallHandler {
   private var interfaces = mutableMapOf<Int, ExifInterface>()
 
   companion object {
-    /** Support legacy embedding registration. */
+    private const val TAG = "NativeExifPlugin"
+    /** Support legacy embedding registration without depending on deprecated APIs at compile time. */
     @JvmStatic
-    fun registerWith(registrar: PluginRegistry.Registrar) {
-      val channel = MethodChannel(registrar.messenger(), "native_exif")
+    fun registerWith(registrar: Any) {
+      val messenger = resolveBinaryMessenger(registrar)
+      if (messenger == null) {
+        Log.w(TAG, "Failed to obtain BinaryMessenger from legacy registrar; plugin not registered")
+        return
+      }
+      val channel = MethodChannel(messenger, "native_exif")
       val plugin = NativeExifPlugin()
       plugin.channel = channel
       channel.setMethodCallHandler(plugin)
+    }
+
+    private fun resolveBinaryMessenger(registrar: Any): BinaryMessenger? {
+      return try {
+        val method = registrar.javaClass.getMethod("messenger")
+        method.invoke(registrar) as? BinaryMessenger
+      } catch (e: Exception) {
+        Log.w(TAG, "Legacy registrar messenger() lookup failed", e)
+        null
+      }
     }
   }
 
